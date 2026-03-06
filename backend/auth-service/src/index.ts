@@ -8,12 +8,12 @@ import bcrypt from "bcrypt";
 import { Pool } from "pg";
 
 const app = express();
-const port = process.env.PORT || 4001;
+const port = process.env.PORT;
 
-const DATABASE_URL = process.env.DATABASE_URL || "postgres://auth_user:auth_password@localhost:5433/auth_db";
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "dev_access_secret";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "dev_refresh_secret";
-const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || "10", 10);
+const DATABASE_URL = process.env.DATABASE_URL;
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10);
 
 type Role = "USER" | "ADMIN";
 
