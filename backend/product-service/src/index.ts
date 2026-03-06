@@ -9,11 +9,10 @@ import fs from "fs";
 import { Pool } from "pg";
 
 const app = express();
-const port = process.env.PORT || 4002;
+const port = process.env.PORT;
 
 const DATABASE_URL =
-  process.env.DATABASE_URL ||
-  "postgres://product_user:product_password@localhost:5434/product_db";
+  process.env.DATABASE_URL;
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
