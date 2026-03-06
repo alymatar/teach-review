@@ -12,11 +12,11 @@ import { swaggerDocument } from "./swagger";
 const upload = multer({ storage: multer.memoryStorage() });
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT;
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:4001";
-const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || "http://localhost:4002";
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "dev_access_secret";
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL;
+const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL;
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 
 interface JwtPayload {
   sub: string;
