@@ -1,7 +1,7 @@
 services:
   # بوابة الـ API (باك ايند المايكروسيرفس)
   gateway:
-    build: ./gateway
+    build: ./backend/gateway
     container_name: techreviews-gateway
     depends_on:
       - auth-service
@@ -17,7 +17,7 @@ services:
 
   # خدمة تسجيل الدخول / المستخدمين
   auth-service:
-    build: ./auth-service
+    build: ./backend/auth-service
     container_name: techreviews-auth
     environment:
       - PORT=4001
@@ -29,7 +29,7 @@ services:
 
   # خدمة المنتجات والمراجعات
   product-service:
-    build: ./product-service
+    build: ./backend/product-service
     container_name: techreviews-product
     environment:
       - PORT=4002
