@@ -86,7 +86,6 @@ export default function ProductDetails() {
   return (
     <div className="min-h-screen pb-20" style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)" }}>
 
-      {/* Floating orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div style={{ position: "absolute", top: "10%", left: "15%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%)", filter: "blur(50px)" }} />
         <div style={{ position: "absolute", top: "55%", right: "8%", width: 350, height: 350, borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.13) 0%, transparent 70%)", filter: "blur(50px)" }} />
@@ -103,7 +102,6 @@ export default function ProductDetails() {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Col: Image / Gallery */}
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -162,7 +160,6 @@ export default function ProductDetails() {
             )}
           </motion.div>
 
-          {/* Right Col: Details & Reviews */}
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -195,7 +192,6 @@ export default function ProductDetails() {
               </p>
             </div>
 
-            {/* Reviews Section */}
             <div className="mt-auto">
               <div className="flex items-center gap-3 mb-8">
                 <div className="flex items-center justify-center w-10 h-10 rounded-xl"
@@ -267,7 +263,6 @@ export default function ProductDetails() {
                 </div>
               )}
 
-              {/* Review List */}
               <div className="space-y-6">
                 {isReviewsLoading ? (
                   <div className="flex justify-center py-8">

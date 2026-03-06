@@ -8,7 +8,6 @@ import { Layers } from "lucide-react";
 type Product = z.infer<typeof productSchema>;
 
 export default function ProductCard({ product }: { product: Product }) {
-  // If image path doesn't start with http or /, prepend /
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
     if (path.startsWith('http') || path.startsWith('/')) return path;

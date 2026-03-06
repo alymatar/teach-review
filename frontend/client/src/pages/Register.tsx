@@ -23,7 +23,6 @@ export default function Register() {
       await register.mutateAsync(formData);
       setLocation("/");
     } catch (err) {
-      // Error handled by hook toast
     }
   };
 

@@ -22,22 +22,18 @@ export default function Home() {
   return (
     <div className="min-h-screen pb-20" style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)" }}>
 
-      {/* Floating orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div style={{ position: "absolute", top: "10%", left: "15%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)", filter: "blur(50px)" }} />
         <div style={{ position: "absolute", top: "55%", right: "8%", width: 350, height: 350, borderRadius: "50%", background: "radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%)", filter: "blur(50px)" }} />
         <div style={{ position: "absolute", bottom: "10%", left: "35%", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)", filter: "blur(50px)" }} />
       </div>
 
-      {/* Hero Section */}
       <section className="relative pt-24 pb-32 overflow-hidden z-10">
-        {/* Grid background */}
         <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(139,92,246,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,0.07) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 60%, rgba(15,12,41,0.95) 100%)" }} />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
 
-          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -72,7 +68,6 @@ export default function Home() {
             Честные отзывы реальных пользователей. Найдите своё новое любимое устройство, программу или аксессуар.
           </motion.p>
 
-          {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -121,7 +116,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">

@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth-context";
 
-// Pages
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ProductDetails from "@/pages/ProductDetails";
@@ -13,7 +12,6 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import AdminDashboard from "@/pages/AdminDashboard";
 
-// Components
 import Navbar from "@/components/Navbar";
 
 function Router() {

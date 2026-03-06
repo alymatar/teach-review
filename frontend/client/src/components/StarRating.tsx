@@ -1,7 +1,7 @@
 import { Star, StarHalf } from "lucide-react";
 
 interface StarRatingProps {
-  rating: number; // Can be a float like 4.5
+  rating: number; 
   max?: number;
   size?: number;
   className?: string;

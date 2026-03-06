@@ -21,7 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    // Load auth from local storage on mount
     const storedToken = localStorage.getItem("techreviews_token");
     const storedUser = localStorage.getItem("techreviews_user");
 
@@ -55,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAuth(null, null);
   };
 
-  if (!isLoaded) return null; // Prevent hydration flash
+  if (!isLoaded) return null; 
 
   return (
     <AuthContext.Provider
