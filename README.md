@@ -1,21 +1,21 @@
-## Tech Reviews Backend (Microservices)
+## Технические обзоры серверной части (микросервисов)
 
-This project is a microservices-based backend for a tech product feedback platform. It consists of:
+Этот проект представляет собой backend-приложение на основе микросервисной архитектуры для платформы отзывов о технологических продуктах. Он включает следующие сервисы:
 
-- **API Gateway** (`gateway`): Single entry point, JWT validation, simple rate limiting, and routing.
-- **Auth Service** (`auth-service`): User registration, login, and **stateless** JWT access + refresh tokens (refresh tokens are **not** stored in the database).
-- **Product Service** (`product-service`): Product CRUD, file-based image upload, and user reviews with automatic average rating calculation.
+- **API Gateway** (`gateway`): единая точка входа в систему, выполняет проверку JWT, базовое ограничение частоты запросов (rate limiting) и маршрутизацию.
+- **Auth Service** (`auth-service`): регистрация пользователей, аутентификация и выдача stateless JWT токенов доступа и обновления.
+- **Product Service** (`product-service`): CRUD-операции для продуктов, загрузка изображений (file-based) и система пользовательских отзывов с автоматическим вычислением среднего рейтинга.
 
-### Quick start (Docker)
+### Быстрый запуск (Docker)
 
-1. Make sure Docker and Docker Compose are installed.
-2. From the project root, run:
+1. Убедитесь, что у вас установлены Docker и Docker Compose.
+2. В корневой директории проекта выполните:
 
 ```bash
 docker compose up --build
 ```
 
-3. Services:
+3. После запуска сервисы будут доступны по следующим адресам:
    - Gateway: `http://localhost:8080`
    - **Swagger UI (Gateway)**: `http://localhost:8080/api-docs`
    - Auth service: `http://localhost:4001` (Swagger: `/docs`)
@@ -23,24 +23,34 @@ docker compose up --build
    - Auth Postgres: `localhost:5433`
    - Product Postgres: `localhost:5434`
 
-### Auth flow (no DB-stored refresh tokens)
+### Процесс аутентификации
 
-- `POST /api/auth/register` – create a user, returns `accessToken` (15 min) and `refreshToken` (7 days).
-- `POST /api/auth/login` – login by email or username, returns new tokens.
-- `POST /api/auth/refresh` – takes a `refreshToken`, verifies it with the refresh secret, and issues **new** access and refresh tokens.
-- Refresh tokens are **pure JWTs** signed with `JWT_REFRESH_SECRET`; they are **not persisted or tracked** in the database.
+- `POST /api/auth/register` – регистрация нового пользователя. Возвращает `accessToken` (15 минут) and `refreshToken` (7 дней).
+- `POST /api/auth/login` – вход по email или username. Возвращает новые токены.
+- `POST /api/auth/refresh` – принимает `refreshToken`, проверяет его с помощью refresh-секрета и выдает **новые** access and refresh tokens.
 
-### Product & review flow (via gateway)
+### Работа с продуктами и отзывами (через Gateway)
 
-- Public:
+- Публичные эндпоинты:
   - `GET /api/products`
   - `GET /api/products/:id`
   - `GET /api/products/:id/reviews`
-- Authenticated:
-  - `POST /api/products/:id/reviews` – create a review (rating 1–5, comment optional).
-- Admin (role enforced at gateway):
-  - `POST /api/products` – create product.
-  - `POST /api/products/:id/image` – upload product image (multipart, field name `image`).
+- Эндпоинты для авторизованных пользователей
+  - `POST /api/products/:id/reviews` – создание отзыва (rating 1–5, comment необязательное).
+- Эндпоинты для администратора:
+  - `POST /api/products` – создание продукта.
+  - `POST /api/products/:id/image` – загрузка изображения продукта.
 
-This scaffold is intended as a starting point; you can extend it with full Swagger/OpenAPI docs, more CRUD operations, and stronger validation as needed.
+
+------------------------------------------------------------------------------------------------------
+### Функции фронтенда 
+
+- **Интерфейс отзывов о продуктах**: пользователи видят список техпродуктов, фильтруют и сортируют их по рейтингу, категории и дате добавления.
+- **Страница детали продукта**: отображает полное описание, изображения, средний рейтинг и список отзывов с пагинацией.
+- **Создание и редактирование отзывов**: авторизованные пользователи могут оставлять отзывы (оценка 1–5, текстовый комментарий), а также обновлять или удалять свои собственные отзывы.
+- **Аутентификация на клиенте**: формы регистрации и входа, хранение и автоматическая отправка `accessToken`, автоматическое обновление по `refreshToken` и выход из системы.
+- **Админ‑панель**: отдельный интерфейс для администраторов с возможностью создавать и редактировать продукты, загружать изображения и модерировать отзывы.
+- **Адаптивный дизайн**: корректная работа на десктопах, планшетах и мобильных устройствах (использование современной CSS‑сетки и flex‑верстки).
+- **Обработка ошибок и уведомления**: информирование пользователя о результатах действий (успех, ошибка валидации, проблемы сети) через всплывающие уведомления/тосты.
+
 

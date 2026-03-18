@@ -28,28 +28,44 @@ export const authResponseSchema = z.object({
   refreshToken: z.string(),
 });
 
-export const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-  category: z.string().nullable(),
-  imagePath: z.string().nullable(),
-  avgRating: z.union([z.string(), z.number()]).transform(v => String(v)),
-  ratingCount: z.number(),
-  createdAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
-  updatedAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
-});
+// Accept both snake_case (backend) and camelCase (frontend server)
+function snakeToCamel<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const camel = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    result[camel] = v;
+  }
+  return result;
+}
 
-export const reviewSchema = z.object({
-  id: z.string(),
-  productId: z.string(),
-  userId: z.string(),
-  rating: z.number(),
-  comment: z.string().nullable(),
-  username: z.string().nullable().optional(),
-  createdAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
-  updatedAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
-});
+export const productSchema = z.preprocess(
+  (val) => (typeof val === "object" && val !== null ? snakeToCamel(val as Record<string, unknown>) : val),
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().nullable(),
+    category: z.string().nullable(),
+    imagePath: z.string().nullable(),
+    avgRating: z.union([z.string(), z.number()]).transform(v => String(v)),
+    ratingCount: z.union([z.string(), z.number()]).transform(v => (typeof v === "string" ? parseInt(v, 10) : v)),
+    createdAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
+    updatedAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
+  })
+);
+
+export const reviewSchema = z.preprocess(
+  (val) => (typeof val === "object" && val !== null ? snakeToCamel(val as Record<string, unknown>) : val),
+  z.object({
+    id: z.string(),
+    productId: z.string(),
+    userId: z.string(),
+    rating: z.number(),
+    comment: z.string().nullable(),
+    username: z.string().nullable().optional(),
+    createdAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
+    updatedAt: z.union([z.string(), z.date()]).transform(v => new Date(v).toISOString()),
+  })
+);
 
 export const productImageSchema = z.object({
   id: z.string(),

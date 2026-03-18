@@ -21,7 +21,10 @@ export const swaggerDocument = {
           id: { type: "string", format: "uuid" },
           email: { type: "string", format: "email" },
           username: { type: "string" },
+          password_hash: { type: "string" },
           role: { type: "string", enum: ["USER", "ADMIN"] },
+          created_at: { type: "string", format: "date-time" },
+          updated_at: { type: "string", format: "date-time" },
         },
       },
       AuthTokens: {
@@ -61,11 +64,11 @@ export const swaggerDocument = {
         properties: {
           id: { type: "string", format: "uuid" },
           name: { type: "string" },
-          description: { type: "string" },
-          category: { type: "string" },
+          description: { type: "string", nullable: true },
+          category: { type: "string", nullable: true },
           image_path: { type: "string", nullable: true },
-          avg_rating: { type: "number" },
-          rating_count: { type: "integer" },
+          avg_rating: { type: "number", format: "decimal", minimum: 0, maximum: 5, default: 0.0 },
+          rating_count: { type: "integer", minimum: 0, default: 0 },
           created_at: { type: "string", format: "date-time" },
           updated_at: { type: "string", format: "date-time" },
         },
@@ -75,8 +78,8 @@ export const swaggerDocument = {
         required: ["name"],
         properties: {
           name: { type: "string" },
-          description: { type: "string" },
-          category: { type: "string" },
+          description: { type: "string", nullable: true },
+          category: { type: "string", nullable: true },
         },
       },
       Review: {
@@ -96,7 +99,7 @@ export const swaggerDocument = {
         required: ["rating"],
         properties: {
           rating: { type: "integer", minimum: 1, maximum: 5 },
-          comment: { type: "string" },
+          comment: { type: "string", nullable: true },
         },
       },
       ErrorResponse: {

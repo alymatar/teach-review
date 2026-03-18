@@ -11,6 +11,7 @@ export function useReviews(productId: string) {
     queryFn: async () => {
       const url = buildUrl(api.products.listReviews.path, { id: productId });
       const res = await fetch(url);
+      if (res.status === 404) return [];
       if (!res.ok) throw new Error("Failed to fetch reviews");
       return api.products.listReviews.responses[200].parse(await res.json());
     },

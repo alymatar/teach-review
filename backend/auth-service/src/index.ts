@@ -8,12 +8,12 @@ import bcrypt from "bcrypt";
 import { Pool } from "pg";
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 4001;
 
-const DATABASE_URL = process.env.DATABASE_URL;
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10);
+const DATABASE_URL = process.env.DATABASE_URL || "postgres://auth_user:auth_password@localhost:5433/auth_db";
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "dev_access_secret";
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "dev_refresh_secret";
+const BCRYPT_SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || "10", 10);
 
 type Role = "USER" | "ADMIN";
 
@@ -217,6 +217,25 @@ app.post("/auth/refresh", async (req: Request, res: Response) => {
 
 app.get("/auth/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
+});
+
+app.get("/auth/users/:id", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query<User>(
+      `SELECT id, username FROM users WHERE id = $1`,
+      [id]
+    );
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const user = result.rows[0];
+    return res.json({ id: user.id, username: user.username });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Error in GET /auth/users/:id:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 async function start() {

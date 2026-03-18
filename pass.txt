@@ -1,2 +1,6 @@
 Email: admin20262@mail.ru
 Password: 123456789123456
+
+cd "c:\Users\moham\Desktop\teach-review-main\teach-review-main"
+
+docker compose exec auth-service node -e "require('bcrypt').hash('NEW_PASSWORD',10).then(h=>console.log(h))"

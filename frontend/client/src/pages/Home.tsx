@@ -3,15 +3,17 @@ import { useProducts } from "@/hooks/use-products";
 import ProductCard from "@/components/ProductCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Loader2, Sparkles, Star, TrendingUp } from "lucide-react";
+import { Search, Loader2, Sparkles, Star, TrendingUp, Filter } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Home() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  
+  const [filter, setFilter] = useState("all"); // Added filter state
+
   const { data: products, isLoading, error } = useProducts({ 
-    search: debouncedSearch || undefined 
+    search: debouncedSearch || undefined,
+    category: filter !== "all" ? filter : undefined // Pass category to hook
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -90,7 +92,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-10 max-w-xl mx-auto"
+            className="mt-10 max-w-2xl mx-auto"
           >
             <form onSubmit={handleSearch} className="relative flex items-center rounded-full"
               style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(139,92,246,0.4)", backdropFilter: "blur(20px)", boxShadow: "0 8px 32px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.1)" }}
@@ -99,11 +101,14 @@ export default function Home() {
               <Input
                 type="text"
                 placeholder="Поиск товаров и брендов..."
-                className="pl-12 pr-32 py-6 text-lg rounded-full border-0 focus-visible:ring-0 bg-transparent"
+                className="pl-12 pr-56 py-6 text-lg rounded-full border-0 focus-visible:ring-0 bg-transparent"
                 style={{ color: "#ffffff" }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+              
+           
+
               <Button
                 type="submit"
                 className="absolute right-2 rounded-full px-6 font-semibold border-0"
@@ -124,6 +129,11 @@ export default function Home() {
               {debouncedSearch ? `Результаты по запросу "${debouncedSearch}"` : "Популярные товары"}
             </h2>
           </div>
+          {filter !== "all" && (
+             <Button variant="ghost" onClick={() => setFilter("all")} className="text-sm" style={{ color: "#a78bfa" }}>
+               Сбросить фильтр
+             </Button>
+          )}
         </div>
 
         {isLoading ? (
@@ -160,4 +170,4 @@ export default function Home() {
       </main>
     </div>
   );
-}
+} 

@@ -57,8 +57,9 @@ export default function ProductDetails() {
 
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
-    if (path.startsWith('http') || path.startsWith('/')) return path;
-    return `/${path}`;
+    const normalized = path.replace(/\\/g, "/");
+    if (normalized.startsWith("http") || normalized.startsWith("/")) return normalized;
+    return `/${normalized}`;
   };
 
   const imageUrl = getImageUrl(product.imagePath);
@@ -117,7 +118,7 @@ export default function ProductDetails() {
               <div className="w-full flex flex-col gap-4">
                 <div className="w-full flex items-center justify-center">
                   <img
-                    src={`/${gallery[0].imagePath}`}
+                    src={getImageUrl(gallery[0].imagePath) ?? "#"}
                     alt={product.name}
                     className="w-full max-w-md h-auto object-contain rounded-2xl cursor-pointer"
                     style={{ filter: "drop-shadow(0 20px 40px rgba(139,92,246,0.3))" }}
@@ -132,7 +133,7 @@ export default function ProductDetails() {
                     {gallery.map((img, index) => (
                       <img
                         key={img.id}
-                        src={`/${img.imagePath}`}
+                        src={getImageUrl(img.imagePath) ?? "#"}
                         alt=""
                         className="h-20 w-full object-cover rounded-lg cursor-pointer"
                         style={{ border: "1px solid rgba(139,92,246,0.3)" }}
@@ -348,7 +349,7 @@ export default function ProductDetails() {
 
               <div className="flex-1 flex items-center justify-center">
                 <img
-                  src={`/${gallery[lightboxIndex].imagePath}`}
+                  src={getImageUrl(gallery[lightboxIndex].imagePath) ?? "#"}
                   alt={product.name}
                   className="max-h-[80vh] w-auto object-contain rounded-2xl"
                   style={{ boxShadow: "0 25px 60px rgba(15,23,42,0.9)" }}
@@ -386,7 +387,7 @@ export default function ProductDetails() {
                     }}
                   >
                     <img
-                      src={`/${img.imagePath}`}
+                      src={getImageUrl(img.imagePath) ?? "#"}
                       alt=""
                       className="h-14 w-14 object-cover"
                     />

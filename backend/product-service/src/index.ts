@@ -9,10 +9,11 @@ import fs from "fs";
 import { Pool } from "pg";
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 4002;
 
 const DATABASE_URL =
-  process.env.DATABASE_URL;
+  process.env.DATABASE_URL ||
+  "postgres://product_user:product_password@localhost:5434/product_db";
 
 const pool = new Pool({
   connectionString: DATABASE_URL,
@@ -153,6 +154,30 @@ app.get("/products", async (req: Request, res: Response) => {
   }
 });
 
+app.delete("/products/images/:imageId", async (req: Request, res: Response) => {
+  const { imageId } = req.params;
+  try {
+    const existing = await pool.query(
+      "SELECT image_path FROM product_images WHERE id = $1",
+      [imageId]
+    );
+    if (existing.rowCount === 0) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+    const imagePath: string = existing.rows[0].image_path;
+    await pool.query("DELETE FROM product_images WHERE id = $1", [imageId]);
+    const absolutePath = path.join(process.cwd(), imagePath);
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+    }
+    return res.status(204).send();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Error in DELETE /products/images/:imageId:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 app.get("/products/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -208,7 +233,7 @@ app.post("/products", async (req: Request, res: Response) => {
   }
 });
 
-// Admin-only product update (gateway enforces role)
+// Update product
 app.put("/products/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   const { name, description, category } = req.body as {
@@ -225,10 +250,7 @@ app.put("/products/:id", async (req: Request, res: Response) => {
     const result = await pool.query(
       `
         UPDATE products
-        SET name = $1,
-            description = $2,
-            category = $3,
-            updated_at = NOW()
+        SET name = $1, description = $2, category = $3, updated_at = NOW()
         WHERE id = $4
         RETURNING id, name, description, category, image_path, avg_rating, rating_count, created_at, updated_at
       `,
@@ -247,16 +269,13 @@ app.put("/products/:id", async (req: Request, res: Response) => {
   }
 });
 
-// Admin-only product delete (gateway enforces role)
+// Delete product
 app.delete("/products/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
     const result = await pool.query(
-      `
-        DELETE FROM products
-        WHERE id = $1
-      `,
+      "DELETE FROM products WHERE id = $1 RETURNING id",
       [id]
     );
 
@@ -310,143 +329,17 @@ app.post(
   }
 );
 
-// Multiple images upload
-app.post(
-  "/products/:id/images",
-  upload.array("images", 10),
-  async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const files = req.files as Express.Multer.File[] | undefined;
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({ message: "at least one image file is required" });
-    }
-
-    try {
-      const values: any[] = [];
-      const placeholders: string[] = [];
-
-      files.forEach((file, index) => {
-        const relativePath = path.relative(process.cwd(), file.path);
-        values.push(id, relativePath);
-        const baseIndex = index * 2;
-        placeholders.push(`($${baseIndex + 1}, $${baseIndex + 2})`);
-      });
-
-      const insertResult = await pool.query(
-        `
-          INSERT INTO product_images (product_id, image_path)
-          VALUES ${placeholders.join(", ")}
-          RETURNING id, product_id AS "productId", image_path AS "imagePath", created_at AS "createdAt"
-        `,
-        values
-      );
-
-      const firstPath = path.relative(process.cwd(), files[0].path);
-      await pool.query(
-        `
-          UPDATE products
-          SET image_path = COALESCE(image_path, $1),
-              updated_at = NOW()
-          WHERE id = $2 AND image_path IS NULL
-        `,
-        [firstPath, id]
-      );
-
-      return res.status(201).json(insertResult.rows);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Error in POST /products/:id/images:", error);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-  }
-);
-
-// List product images
-app.get("/products/:id/images", async (req: Request, res: Response) => {
-  const { id } = req.params;
-
-  try {
-    const result = await pool.query(
-      `
-        SELECT id, product_id AS "productId", image_path AS "imagePath", created_at AS "createdAt"
-        FROM product_images
-        WHERE product_id = $1
-        ORDER BY created_at DESC
-      `,
-      [id]
-    );
-
-    return res.json(result.rows);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Error in GET /products/:id/images:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// Delete a single product image
-app.delete("/products/images/:imageId", async (req: Request, res: Response) => {
-  const { imageId } = req.params;
-
-  try {
-    const existing = await pool.query(
-      `
-        SELECT image_path
-        FROM product_images
-        WHERE id = $1
-      `,
-      [imageId]
-    );
-
-    if (existing.rowCount === 0) {
-      return res.status(404).json({ message: "Image not found" });
-    }
-
-    const imagePath = existing.rows[0].image_path as string;
-
-    await pool.query(
-      `
-        DELETE FROM product_images
-        WHERE id = $1
-      `,
-      [imageId]
-    );
-
-    try {
-      const absolutePath = path.isAbsolute(imagePath)
-        ? imagePath
-        : path.join(process.cwd(), imagePath);
-      if (fs.existsSync(absolutePath)) {
-        fs.unlinkSync(absolutePath);
-      }
-    } catch (fileErr) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to delete image file from disk:", fileErr);
-    }
-
-    return res.status(204).send();
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error("Error in DELETE /products/images/:imageId:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-// Reviews (with username from users table)
+// Reviews
 app.get("/products/:id/reviews", async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
     const result = await pool.query(
       `
-        SELECT r.id, r.product_id AS "productId", r.user_id AS "userId", r.rating, r.comment,
-               r.created_at AS "createdAt", r.updated_at AS "updatedAt",
-               u.username
-        FROM reviews r
-        LEFT JOIN users u ON r.user_id = u.id
-        WHERE r.product_id = $1
-        ORDER BY r.created_at DESC
+        SELECT id, product_id, user_id, rating, comment, created_at, updated_at
+        FROM reviews
+        WHERE product_id = $1
+        ORDER BY created_at DESC
       `,
       [id]
     );
@@ -494,6 +387,73 @@ app.post("/products/:id/reviews", async (req: Request, res: Response) => {
 app.get("/products/health", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
+
+app.get("/products/:id/images", async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      `
+        SELECT id, product_id AS "productId", image_path AS "imagePath", created_at AS "createdAt"
+        FROM product_images
+        WHERE product_id = $1
+        ORDER BY created_at DESC
+      `,
+      [id]
+    );
+    return res.json(result.rows);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error("Error in GET /products/:id/images:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post(
+  "/products/:id/images",
+  upload.array("images", 10),
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const files = (req as any).files as Express.Multer.File[];
+
+    if (!files?.length) {
+      return res.status(400).json({ message: "at least one image file is required" });
+    }
+
+    try {
+      const inserted: any[] = [];
+      for (const file of files) {
+        const relativePath = path.relative(process.cwd(), file.path);
+        const insertResult = await pool.query(
+          `
+            INSERT INTO product_images (product_id, image_path)
+            VALUES ($1, $2)
+            RETURNING id, product_id AS "productId", image_path AS "imagePath", created_at AS "createdAt"
+          `,
+          [id, relativePath]
+        );
+        inserted.push(insertResult.rows[0]);
+      }
+      const firstFile = files[0];
+      if (firstFile) {
+        const firstPath = path.relative(process.cwd(), firstFile.path);
+        await pool.query(
+          `
+            UPDATE products
+            SET image_path = COALESCE(image_path, $1),
+                updated_at = NOW()
+            WHERE id = $2 AND (image_path IS NULL OR image_path = '')
+          `,
+          [firstPath, id]
+        );
+      }
+      return res.status(201).json(inserted);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Error in POST /products/:id/images:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
 
 async function start() {
   try {

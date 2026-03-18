@@ -6,13 +6,16 @@ import { useAuth } from "@/lib/auth-context";
 type CreateProductInput = z.infer<typeof api.products.create.input>;
 type ProductImage = z.infer<typeof productImageSchema>;
 
-export function useProducts(params?: { search?: string; category?: string }) {
+export function useProducts(params?: { search?: string; category?: string; minRating?: number }) {
   return useQuery({
     queryKey: [api.products.list.path, params],
     queryFn: async () => {
       const searchParams = new URLSearchParams();
+      
       if (params?.search) searchParams.append("search", params.search);
       if (params?.category) searchParams.append("category", params.category);
+      
+      if (params?.minRating) searchParams.append("minRating", params.minRating.toString());
       
       const url = `${api.products.list.path}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
       
@@ -80,7 +83,6 @@ export function useUploadImage() {
         method: api.products.uploadImage.method,
         headers: {
           "Authorization": `Bearer ${token}`,
-          // Note: DO NOT set Content-Type here, let the browser set it with the boundary for FormData
         },
         body: formData,
       });
@@ -157,13 +159,15 @@ export function useProductImages(id: string | null) {
   return useQuery({
     queryKey: [api.products.listImages.path, id],
     enabled: !!id,
+    refetchOnMount: "always",
     queryFn: async (): Promise<ProductImage[]> => {
       const url = buildUrl(api.products.listImages.path, { id: id as string });
       const res = await fetch(url);
-      if (!res.ok) {
-        throw new Error("Failed to fetch product images");
-      }
-      return api.products.listImages.responses[200].parse(await res.json());
+      if (res.status === 404) return [];
+      if (!res.ok) throw new Error("Failed to fetch product images");
+      const data = await res.json();
+      const arr = Array.isArray(data) ? data : (data ? [data] : []);
+      return api.products.listImages.responses[200].parse(arr);
     },
   });
 }

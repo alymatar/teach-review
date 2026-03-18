@@ -161,7 +161,7 @@ export default function AdminDashboard() {
     if (!selectedProductId || editFiles.length === 0) return;
     try {
       await uploadImages.mutateAsync({ id: selectedProductId, files: editFiles });
-      toast({ title: "Изображения загружены" });
+      toast({ title: "Изображения загружены", description: `Загружено ${editFiles.length} изображений` });
       setEditFiles([]);
     } catch (err) {
       toast({ variant: "destructive", title: "Ошибка загрузки", description: (err as Error).message });
@@ -464,7 +464,7 @@ export default function AdminDashboard() {
                     <div className="pt-6 space-y-5" style={{ borderTop: "1px solid rgba(212,175,55,0.15)" }}>
                       <h3 className="font-semibold flex items-center gap-2" style={{ color: "#D4AF37" }}>
                         <ImagePlus className="h-4 w-4" />
-                        Изображения товара
+                        Изображение товара
                       </h3>
 
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -473,7 +473,7 @@ export default function AdminDashboard() {
                             <motion.div key={img.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                               className="relative group rounded-xl overflow-hidden border transition-all duration-300 hover:shadow-xl"
                               style={{ borderColor: "rgba(212,175,55,0.2)", boxShadow: "0 4px 15px rgba(0,0,0,0.4)" }}>
-                              <img src={`/${img.imagePath}`} alt="" className="h-28 w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                              <img src={`/${img.imagePath}`.replace(/^\/\//, "/")} alt="" className="h-28 w-full object-cover group-hover:scale-105 transition-transform duration-300" />
                               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                                 style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)" }} />
                               <button type="button"
@@ -484,13 +484,23 @@ export default function AdminDashboard() {
                               </button>
                             </motion.div>
                           ))
-                        ) : (
-                          <div className="col-span-full text-center py-8 rounded-xl border border-dashed"
-                            style={{ borderColor: "rgba(212,175,55,0.2)", background: "rgba(212,175,55,0.03)" }}>
-                            <Images className="h-10 w-10 mx-auto mb-2" style={{ color: "rgba(212,175,55,0.3)" }} />
-                            <p className="text-sm" style={{ color: "#555" }}>Изображения ещё не загружены.</p>
-                          </div>
-                        )}
+                        ) : (() => {
+                          const selectedProduct = products?.find((p) => p.id === selectedProductId);
+                          const mainImagePath = selectedProduct?.imagePath;
+                          return mainImagePath ? (
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                              className="relative group rounded-xl overflow-hidden border"
+                              style={{ borderColor: "rgba(212,175,55,0.2)", boxShadow: "0 4px 15px rgba(0,0,0,0.4)" }}>
+                              <img src={mainImagePath.startsWith("/") ? mainImagePath : `/${mainImagePath}`} alt="" className="h-28 w-full object-cover" />
+                            </motion.div>
+                          ) : (
+                            <div className="col-span-full text-center py-8 rounded-xl border border-dashed"
+                              style={{ borderColor: "rgba(212,175,55,0.2)", background: "rgba(212,175,55,0.03)" }}>
+                              <Images className="h-10 w-10 mx-auto mb-2" style={{ color: "rgba(212,175,55,0.3)" }} />
+                              <p className="text-sm" style={{ color: "#555" }}>Изображение ещё не загружено.</p>
+                            </div>
+                          );
+                        })()}
                       </div>
 
                       <form onSubmit={handleUploadMoreImages} className="space-y-4">

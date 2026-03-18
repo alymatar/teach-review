@@ -12,11 +12,11 @@ import { swaggerDocument } from "./swagger";
 const upload = multer({ storage: multer.memoryStorage() });
 
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 8080;
 
-const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL;
-const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL;
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:4001";
+const PRODUCT_SERVICE_URL = process.env.PRODUCT_SERVICE_URL || "http://localhost:4002";
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "dev_access_secret";
 
 interface JwtPayload {
   sub: string;
@@ -144,7 +144,25 @@ app.get("/api/products/:id/reviews", async (req, res) => {
     const response = await axios.get(
       `${PRODUCT_SERVICE_URL}/products/${req.params.id}/reviews`
     );
-    res.status(response.status).json(response.data);
+    const reviews = response.data;
+    if (Array.isArray(reviews) && reviews.length > 0) {
+      const userIds = [...new Set(reviews.map((r: any) => r.user_id || r.userId).filter(Boolean))];
+      const usernameMap: Record<string, string> = {};
+      for (const uid of userIds) {
+        try {
+          const userRes = await axios.get(`${AUTH_SERVICE_URL}/auth/users/${uid}`);
+          if (userRes.data?.username) usernameMap[uid] = userRes.data.username;
+        } catch {
+          // ignore
+        }
+      }
+      const enriched = reviews.map((r: any) => ({
+        ...r,
+        username: usernameMap[r.user_id || r.userId] || null,
+      }));
+      return res.status(200).json(enriched);
+    }
+    res.status(response.status).json(reviews);
   } catch (error: any) {
     if (error.response) {
       return res.status(error.response.status).json(error.response.data);
@@ -165,18 +183,10 @@ app.get("/api/products/:id", async (req, res) => {
   }
 });
 
-app.put("/api/products/:id", authenticateJWT, requireRole("ADMIN"), async (req, res) => {
+app.get("/api/products/:id/images", async (req, res) => {
   try {
-    const user = (req as any).user as JwtPayload;
-    const response = await axios.put(
-      `${PRODUCT_SERVICE_URL}/products/${req.params.id}`,
-      req.body,
-      {
-        headers: {
-          "x-user-id": user.sub,
-          "x-user-role": user.role,
-        },
-      }
+    const response = await axios.get(
+      `${PRODUCT_SERVICE_URL}/products/${req.params.id}/images`
     );
     res.status(response.status).json(response.data);
   } catch (error: any) {
@@ -187,17 +197,51 @@ app.put("/api/products/:id", authenticateJWT, requireRole("ADMIN"), async (req, 
   }
 });
 
-app.delete("/api/products/:id", authenticateJWT, requireRole("ADMIN"), async (req, res) => {
-  try {
-    const user = (req as any).user as JwtPayload;
-    const response = await axios.delete(
-      `${PRODUCT_SERVICE_URL}/products/${req.params.id}`,
-      {
-        headers: {
-          "x-user-id": user.sub,
-          "x-user-role": user.role,
-        },
+app.post(
+  "/api/products/:id/images",
+  authenticateJWT,
+  requireRole("ADMIN"),
+  upload.array("images", 10),
+  async (req, res) => {
+    try {
+      const user = (req as any).user as JwtPayload;
+      const files = (req as any).files;
+      if (!files?.length) {
+        return res.status(400).json({ message: "at least one image file is required" });
       }
+      const form = new FormData();
+      for (const f of files) {
+        form.append("images", f.buffer, {
+          filename: f.originalname || "image",
+          contentType: f.mimetype,
+        });
+      }
+      const response = await axios.post(
+        `${PRODUCT_SERVICE_URL}/products/${req.params.id}/images`,
+        form,
+        {
+          headers: {
+            ...form.getHeaders(),
+            "x-user-id": user.sub,
+            "x-user-role": user.role,
+          },
+          maxBodyLength: Infinity,
+        }
+      );
+      res.status(response.status).json(response.data);
+    } catch (error: any) {
+      if (error.response) {
+        return res.status(error.response.status).json(error.response.data);
+      }
+      res.status(500).json({ message: "Product service unavailable" });
+    }
+  }
+);
+
+app.delete("/api/products/images/:imageId", authenticateJWT, requireRole("ADMIN"), async (req, res) => {
+  try {
+    const response = await axios.delete(
+      `${PRODUCT_SERVICE_URL}/products/images/${req.params.imageId}`
     );
     res.status(response.status).send(response.data);
   } catch (error: any) {
@@ -246,54 +290,19 @@ app.post(
   }
 );
 
-app.post(
-  "/api/products/:id/images",
-  authenticateJWT,
-  requireRole("ADMIN"),
-  upload.array("images", 10),
-  async (req, res) => {
-    try {
-      const user = (req as any).user as JwtPayload;
-      const files = req.files as Express.Multer.File[] | undefined;
-
-      if (!files || files.length === 0) {
-        return res.status(400).json({ message: "at least one image file is required" });
-      }
-
-      const form = new FormData();
-      files.forEach((file) => {
-        form.append("images", file.buffer, {
-          filename: file.originalname || "image",
-          contentType: file.mimetype,
-        });
-      });
-
-      const response = await axios.post(
-        `${PRODUCT_SERVICE_URL}/products/${req.params.id}/images`,
-        form,
-        {
-          headers: {
-            ...form.getHeaders(),
-            "x-user-id": user.sub,
-            "x-user-role": user.role,
-          },
-          maxBodyLength: Infinity,
-        }
-      );
-
-      res.status(response.status).json(response.data);
-    } catch (error: any) {
-      if (error.response) {
-        return res.status(error.response.status).json(error.response.data);
-      }
-      res.status(500).json({ message: "Product service unavailable" });
-    }
-  }
-);
-
-app.get("/api/products/:id/images", async (req, res) => {
+app.put("/api/products/:id", authenticateJWT, requireRole("ADMIN"), async (req, res) => {
   try {
-    const response = await axios.get(`${PRODUCT_SERVICE_URL}/products/${req.params.id}/images`);
+    const user = (req as any).user as JwtPayload;
+    const response = await axios.put(
+      `${PRODUCT_SERVICE_URL}/products/${req.params.id}`,
+      req.body,
+      {
+        headers: {
+          "x-user-id": user.sub,
+          "x-user-role": user.role,
+        },
+      }
+    );
     res.status(response.status).json(response.data);
   } catch (error: any) {
     if (error.response) {
@@ -303,31 +312,19 @@ app.get("/api/products/:id/images", async (req, res) => {
   }
 });
 
-app.delete(
-  "/api/products/images/:imageId",
-  authenticateJWT,
-  requireRole("ADMIN"),
-  async (req, res) => {
-    try {
-      const user = (req as any).user as JwtPayload;
-      const response = await axios.delete(
-        `${PRODUCT_SERVICE_URL}/products/images/${req.params.imageId}`,
-        {
-          headers: {
-            "x-user-id": user.sub,
-            "x-user-role": user.role,
-          },
-        }
-      );
-      res.status(response.status).send(response.data);
-    } catch (error: any) {
-      if (error.response) {
-        return res.status(error.response.status).json(error.response.data);
-      }
-      res.status(500).json({ message: "Product service unavailable" });
+app.delete("/api/products/:id", authenticateJWT, requireRole("ADMIN"), async (req, res) => {
+  try {
+    const response = await axios.delete(
+      `${PRODUCT_SERVICE_URL}/products/${req.params.id}`
+    );
+    res.status(response.status).send(response.data);
+  } catch (error: any) {
+    if (error.response) {
+      return res.status(error.response.status).json(error.response.data);
     }
+    res.status(500).json({ message: "Product service unavailable" });
   }
-);
+});
 
 app.post("/api/products", authenticateJWT, requireRole("ADMIN"), async (req, res) => {
   try {

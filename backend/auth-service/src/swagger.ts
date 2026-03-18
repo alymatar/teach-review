@@ -14,7 +14,10 @@ export const swaggerDocument = {
           id: { type: "string", format: "uuid" },
           email: { type: "string", format: "email" },
           username: { type: "string" },
+          password_hash: { type: "string" },
           role: { type: "string", enum: ["USER", "ADMIN"] },
+          created_at: { type: "string", format: "date-time" },
+          updated_at: { type: "string", format: "date-time" },
         },
       },
       RegisterRequest: {
